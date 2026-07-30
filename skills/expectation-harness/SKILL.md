@@ -20,6 +20,7 @@ Your objective is to enforce the **Expectation-Grounded Alignment (EGA)** paradi
    - **Static Layer**: Deterministic Python/Node verifier script checking syntax, compilation, word bounds, section headers, link health, placeholders, and OKF concept integrity (`verify_okf.py`).
    - **Dynamic Layer (Blinded LLM-as-a-Judge)**: A fresh subagent launched with **ZERO past conversation memory or execution history pollution**, evaluating the deliverable against `rubric.json` purely as an author-blind submission.
 5. **Iterative Delta Feedback Loop**: If either gate fails, parse the failure output into a concise **Delta Report** (`<node_id>_delta_report.md`) and feed it back to the assigned persona subagent for pinpointed remediation (capped at `max_retries=3`).
+6. **Scope & Format Appropriateness (Zero HTML Over-Compilation)**: Internal artifacts (specs, threat models, walkthroughs, analysis reports, harness deliverables) MUST remain purely as raw Markdown (`.md`). Never compile internal artifacts into HTML unless `"compile_html": true` is explicitly configured. Reserve HTML presentation portals strictly for primary user-facing documents (`user_guide.md`, `prd_feature_doc.md`).
 
 ---
 

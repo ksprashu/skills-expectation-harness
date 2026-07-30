@@ -17,8 +17,8 @@
 ega_loop_runner.py - Active Control Loop Runner for Expectation-Grounded Alignment
 
 Monitors and executes the Dual-Verification Gate (Static Check + Dynamic Judge)
-for an EGA harness task graph. Handles delta feedback loops, retries, and
-optional post-gate HTML report compilation via skills-documentation (compile_docs.py).
+for an EGA harness task graph with topological DAG dependency resolution,
+delta feedback loops, retries, and post-gate HTML report compilation via skills-documentation.
 """
 
 import os
@@ -42,10 +42,15 @@ def run_static_verifier(script_path):
             return True, []
         return False, [res.stderr or res.stdout or "Non-JSON exit code failure"]
 
-def evaluate_judge_verdict(verdict_path):
+def evaluate_judge_verdict(verdict_path, node=None, harness_dir=None):
     p = Path(verdict_path)
     if not p.exists():
-        return False, ["Judge verdict file missing on disk."]
+        prompt_hint = ""
+        if node and harness_dir:
+            jp = node.get("judge_prompt")
+            if jp and Path(jp).exists():
+                prompt_hint = f" (Directive prompt available at: {jp})"
+        return False, [f"Judge verdict file missing on disk at {verdict_path}. Dispatch Blinded Judge subagent to generate verdict.{prompt_hint}"]
 
     try:
         data = json.loads(p.read_text(encoding="utf-8"))
@@ -57,8 +62,27 @@ def evaluate_judge_verdict(verdict_path):
     except Exception as e:
         return False, [f"Failed to parse judge verdict: {str(e)}"]
 
-def trigger_html_compilation(deliverable_path):
-    """Optionally trigger skills-documentation compile_docs.py if available."""
+def trigger_html_compilation(deliverable_path, node=None):
+    """
+    Optionally trigger skills-documentation compile_docs.py.
+    IMPORTANT: HTML compilation is strictly restricted to user-facing portals
+    (e.g., user_guide.md, prd_feature_doc.md) or nodes with "compile_html": true.
+    Internal artifacts (specs, threat models, walkthroughs, deliverables) stay as plain Markdown.
+    """
+    filename = Path(deliverable_path).name.lower()
+    user_facing_portals = ["user_guide.md", "prd_feature_doc.md"]
+    
+    # Check if node explicitly requests HTML compilation or if it's a known user portal
+    should_compile = False
+    if node and node.get("compile_html") is True:
+        should_compile = True
+    elif filename in user_facing_portals:
+        should_compile = True
+
+    if not should_compile:
+        print(f"[HTML Presentation] Skipped (Internal artifact '{filename}' kept as plain Markdown).")
+        return
+
     compiler_candidates = [
         Path("/Users/ksprashanth/code/github/skills-documentation/skills/documentation/scripts/compile_docs.py"),
         Path.home() / ".gemini" / "skills" / "documentation" / "scripts" / "compile_docs.py"
@@ -113,6 +137,22 @@ Save your revised deliverable to disk before re-running the Dual-Verification Ga
 """
     return report
 
+def check_dependencies_satisfied(node, nodes_map):
+    """Verifies if all parent node dependencies in depends_on are COMPLETED."""
+    depends_on = node.get("depends_on", [])
+    if not depends_on:
+        return True, []
+
+    unresolved = []
+    for dep_id in depends_on:
+        parent = nodes_map.get(dep_id)
+        if not parent or parent.get("status") != "COMPLETED":
+            unresolved.append(f"{dep_id} (Status: {parent.get('status') if parent else 'MISSING'})")
+
+    if unresolved:
+        return False, unresolved
+    return True, []
+
 def process_node(node, harness_dir):
     node_id = node["id"]
     static_script = node["static_verifier"]
@@ -125,13 +165,13 @@ def process_node(node, harness_dir):
     static_pass, static_errors = run_static_verifier(static_script)
 
     # 2. Check Dynamic Blinded Judge Verdict
-    judge_pass, judge_errors = evaluate_judge_verdict(judge_verdict_file)
+    judge_pass, judge_errors = evaluate_judge_verdict(judge_verdict_file, node=node, harness_dir=harness_dir)
 
     # Dual Gate Assertion
     if static_pass and judge_pass:
         print(f"[{node_id}] DUAL-GATE VERIFICATION PASSED SUCCESSFULLY!")
         node["status"] = "COMPLETED"
-        trigger_html_compilation(target_artifact)
+        trigger_html_compilation(target_artifact, node=node)
         return True, None
     else:
         node["retry_count"] += 1
@@ -168,11 +208,24 @@ def main():
     with open(graph_file, "r", encoding="utf-8") as f:
         graph = json.load(f)
 
+    nodes = graph["nodes"]
+    nodes_map = {n["id"]: n for n in nodes}
+
     all_passed = True
-    for node in graph["nodes"]:
+    processed_any = False
+
+    for node in nodes:
         if node["status"] in ["COMPLETED", "FAILED_CIRCUIT_BREAKER"]:
             continue
 
+        # Topological Dependency Check
+        deps_ok, unresolved_deps = check_dependencies_satisfied(node, nodes_map)
+        if not deps_ok:
+            print(f"[{node['id']}] BLOCKED: Unresolved dependencies: {', '.join(unresolved_deps)}")
+            all_passed = False
+            continue
+
+        processed_any = True
         passed, delta_report = process_node(node, target_path)
         if not passed:
             all_passed = False
@@ -186,7 +239,22 @@ def main():
     with open(graph_file, "w", encoding="utf-8") as f:
         json.dump(graph, f, indent=2)
 
-    sys.exit(0 if all_passed else 1)
+    # Check if ALL nodes in graph are COMPLETED
+    all_nodes_completed = all(n.get("status") == "COMPLETED" for n in nodes)
+    if all_nodes_completed:
+        print("\n🎉 ALL TASK GRAPH NODES COMPLETED! Triggering Full Closure & RSI Dream Sequence...")
+        
+        # 1. Execute Domain Closure Engine
+        closure_script = Path(__file__).parent / "ega_closure_engine.py"
+        if closure_script.exists():
+            subprocess.run([sys.executable, str(closure_script), str(target_path)])
+
+        # 2. Execute RSI Dream Sequence Engine
+        rsi_script = Path(__file__).parent / "rsi_dream_engine.py"
+        if rsi_script.exists():
+            subprocess.run([sys.executable, str(rsi_script), str(target_path)])
+
+    sys.exit(0 if (all_passed or all_nodes_completed) else 1)
 
 if __name__ == "__main__":
     main()

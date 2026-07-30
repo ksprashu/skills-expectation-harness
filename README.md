@@ -9,11 +9,12 @@ The **Expectation-Grounded Alignment (EGA)** Harness Engine (invoked via `/ega` 
 
 ## 🌟 Key Features
 
-* 🎯 **Pre-Execution Contract Synthesis**: Generates task-specific verifiers (`verify_static.py`) and judge rubrics (`rubric.json`) prior to worker dispatch.
+* 🎯 **Pre-Execution Contract Synthesis**: Generates domain-aware verifiers (`verify_static.py`), blinded judge prompts (`task_01_judge_prompt.md`), and rubrics (`rubric.json`) prior to worker dispatch.
 * 🎭 **6-Persona Role Assignments**: Assigns specialized cognitive persona roles (`Scout-Researcher`, `Analyst-Inquirer`, `Architect-Blueprint`, `Builder-Coder`, `Sentry-Gatekeeper`, `Mentor-Educator`) to task graph nodes without document overhead.
+* 🌿 **Topological Task Graph Execution**: Resolves node dependency trees (`depends_on: ["node_01"]`) so dependent tasks only execute after parent nodes pass both verification gates.
 * 🧠 **Selective Knowledge Grounding**: Hydrates worker subagent context on demand using Google's Open Knowledge Format (OKF) index (`.gemini/knowledge/index.md`) and deterministic OKF verifiers (`verify_okf.py`).
 * 🛡️ **Dual-Verification Gate**: Enforces a strict two-stage quality gate combining fast local script execution with fresh-context, blinded LLM-as-a-Judge evaluations.
-* ⚡ **Non-Coding & Coding Support**: Native verifiers for both software development (syntax, linters, tests) and non-coding domains (research dossiers, strategy documents, architecture specs).
+* ⚡ **Domain-Aware Verification**: Specialized native verifiers for Python AST compilation, Node syntax checks, Markdown links/word bounds, and OKF concept compliance.
 * 🔄 **Pinpointed Delta Feedback Loops**: Automatically converts static check errors and judge defect lists into concise delta reports (`<node_id>_delta_report.md`) for iterative worker refinement.
 * 🧩 **Fixed-Model Calibration**: Employs context slicing and disk scratchpad state persistence to maximize reliability across uniform model environments.
 

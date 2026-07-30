@@ -23,17 +23,19 @@ EAW replaces subjective agent self-assessment with **empirical contract fulfillm
 ## 2. Step-by-Step Walkthrough
 
 ### Step 1: Initialize the EGA Harness
-To compile a harness for a task, run the compiler script:
+To compile a harness for a task, run the compiler script with optional domain and persona parameters:
 
 ```bash
-python3 skills/expectation-harness/scripts/compile_ega_harness.py "Draft an AI Governance Policy for Enterprise Data"
+# Domain-aware compilation (python, node, markdown, okf, general)
+python3 skills/expectation-harness/scripts/compile_ega_harness.py "Build REST API Middleware" "Builder-Coder" --domain python
 ```
 
 This creates the harness directory under `.gemini/harness/EGA-<HEX4>/`:
-- `.gemini/harness/EGA-A8F2/task_graph.json`
-- `.gemini/harness/EGA-A8F2/verify_static.py`
-- `.gemini/harness/EGA-A8F2/rubric.json`
-- `.gemini/harness/EGA-A8F2/tasks/task_01_spec.md`
+- `.gemini/harness/EGA-A8F2/task_graph.json` (Includes topological `depends_on` DAG configuration)
+- `.gemini/harness/EGA-A8F2/verify_static.py` (Domain-aware deterministic verifier)
+- `.gemini/harness/EGA-A8F2/rubric.json` (Dynamic judge schema)
+- `.gemini/harness/EGA-A8F2/tasks/task_01_spec.md` (Worker directive)
+- `.gemini/harness/EGA-A8F2/tasks/task_01_judge_prompt.md` (Blinded Judge directive)
 
 ---
 

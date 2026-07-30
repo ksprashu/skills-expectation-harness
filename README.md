@@ -15,6 +15,8 @@ The **Expectation-Grounded Alignment (EGA)** Harness Engine (invoked via `/ega` 
 * 🧠 **Selective Knowledge Grounding**: Hydrates worker subagent context on demand using Google's Open Knowledge Format (OKF) index (`.gemini/knowledge/index.md`) and deterministic OKF verifiers (`verify_okf.py`).
 * 🛡️ **Dual-Verification Gate**: Enforces a strict two-stage quality gate combining fast local script execution with fresh-context, blinded LLM-as-a-Judge evaluations.
 * ⚡ **Domain-Aware Verification**: Specialized native verifiers for Python AST compilation, Node syntax checks, Markdown links/word bounds, and OKF concept compliance.
+* 🔒 **Domain-Aware Full Closure Protocol**: Automatically executes git status inspection, conventional commit formatting (`feat(<short_id>): ...`), and remote push upon verification signoff.
+* 🌌 **Recursive Self-Improvement (RSI) & Dream Sequence**: Post-execution reflection loop that harvests defects, updates central learning registries (`rsi_learnings_registry.json`), and fortifies future verifiers.
 * 🔄 **Pinpointed Delta Feedback Loops**: Automatically converts static check errors and judge defect lists into concise delta reports (`<node_id>_delta_report.md`) for iterative worker refinement.
 * 🧩 **Fixed-Model Calibration**: Employs context slicing and disk scratchpad state persistence to maximize reliability across uniform model environments.
 
@@ -61,10 +63,13 @@ skills-expectation-harness/
         │   ├── knowledge_grounding.md # Selective Context Grounding via OKF
         │   ├── static_verifiers.md    # Coding & non-coding deterministic verifiers
         │   ├── dynamic_judges.md      # Blinded LLM-as-a-Judge architecture
-        │   └── model_calibration.md   # Context slicing & single-model optimization
+        │   ├── model_calibration.md   # Context slicing & single-model optimization
+        │   └── rsi_and_closure_protocol.md # Domain Closure & RSI Dream Sequence Protocol
         └── scripts/
             ├── compile_ega_harness.py # Harness & contract compiler
             ├── ega_loop_runner.py     # Active control loop & Dual Gate manager
+            ├── ega_closure_engine.py  # Domain-Aware Full Closure Engine
+            ├── rsi_dream_engine.py    # Recursive Self-Improvement Reflection Engine
             └── verify_okf.py          # Deterministic OKF Concept Verifier
 ```
 

@@ -50,10 +50,21 @@ def execute_rsi_dream_sequence(harness_dir):
     print(f"Goal: {goal} | Domain: {domain}")
     print(f"=======================================================")
 
-    # 1. Harvest Delta Reports & Judge Verdicts
+    # 1. Harvest Delta Reports, Judge Verdicts & Brain Transcripts
     total_retries = sum(n.get("retry_count", 0) for n in nodes)
     defects_harvested = []
     
+    # Brain transcript mining for historical context
+    miner_script = Path(__file__).parent / "mine_brain_transcripts.py"
+    brain_insights_count = 0
+    if miner_script.exists():
+        try:
+            mres = subprocess.run([sys.executable, str(miner_script), domain, "--max", "5"], capture_output=True, text=True)
+            if "Found:" in mres.stdout:
+                print(f"[RSI Dream Engine] Brain Mining: Mined historical context across brain transcripts for domain '{domain}'.")
+        except Exception:
+            pass
+
     for n in nodes:
         node_id = n.get("id")
         verdict_file = harness_path / f"{node_id}_judge_verdict.json"

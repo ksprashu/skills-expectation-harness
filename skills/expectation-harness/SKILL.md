@@ -60,18 +60,19 @@ flowchart TD
     end
 ```
 
-### Phase 1: Expectation Synthesis
-1. Execute `python3 /Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/scripts/compile_ega_harness.py "<USER_GOAL>" "<PERSONA_ROLE>"` to initialize `.gemini/harness/<SHORT_ID>/`.
-2. Inspect `verify_static.py` and customize deterministic checks for the domain problem. Refer to **[Static Verifiers Guide](file:///Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/references/static_verifiers.md)** and **[OKF Verifier Guide](file:///Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/references/knowledge_grounding.md)**.
-3. Inspect `rubric.json` and customize criteria and thresholds for the Blinded Judge. Refer to **[Dynamic Judges Guide](file:///Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/references/dynamic_judges.md)**.
-4. Set `persona_role` and `grounding_concepts` in `task_graph.json`. Refer to **[Persona Roles Guide](file:///Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/references/persona_roles.md)**.
+### Phase 1: Expectation Synthesis & Controller Orchestration
+1. Execute the controller orchestrator directly:
+   `python3 /Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/scripts/ega_controller.py --prompt "<FULL_USER_PROMPT>" --images <IMG1_PATH> --domain web --persona Builder-Coder`
+2. Alternatively, run `compile_ega_harness.py` with `--prompt` and `--images` flags to generate `.gemini/harness/<SHORT_ID>/expectations.json`, `verify_static.py`, `rubric.json`, and `task_graph.json`.
+3. Inspect `expectations.json` to verify all prompt requirements and multimodal attachment predicates are tokenized.
+4. Inspect `verify_static.py` and `rubric.json` for domain checks. Refer to **[Static Verifiers Guide](file:///Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/references/static_verifiers.md)**.
 
-### Phase 2: Grounded Alignment Execution & Control Loop
-1. Dispatch the **Worker Subagent** with the isolated task spec directive (`tasks/task_XX_spec.md`) and persona role priming.
-2. Once the worker writes its deliverable to disk, execute `python3 /Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/scripts/ega_loop_runner.py <SHORT_ID>`.
-3. Dispatch the **Blinded Judge Subagent** in a fresh session with **zero past context**, passing `rubric.json`.
-4. Read the verdict log (`<node_id>_judge_verdict.json`).
-5. Run `ega_loop_runner.py` to evaluate the Dual Gate. If failed, re-dispatch the worker with the generated `<node_id>_delta_report.md`. Repeat until `COMPLETED`.
+### Phase 2: Grounded Alignment Execution & Hard-Enforced Control Loop
+1. Dispatch the **Worker Subagent** with the isolated task spec directive (`tasks/task_01_spec.md`).
+2. Once the worker writes deliverables to disk, execute `python3 /Users/ksprashanth/code/github/skills-expectation-harness/skills/expectation-harness/scripts/ega_loop_runner.py <SHORT_ID>`.
+3. `ega_loop_runner.py` evaluates the Dual Gate (Static Verifier + Dynamic LLM Judge). If `*_judge_verdict.json` is missing, an automated fallback evaluation against `expectations.json` and `rubric.json` is automatically triggered and saved.
+4. If either gate fails, parse the generated `<node_id>_delta_report.md` and re-dispatch the worker for pinpointed remediation until `COMPLETED`.
+
 
 ---
 

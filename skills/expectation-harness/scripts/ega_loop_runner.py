@@ -17,7 +17,8 @@
 ega_loop_runner.py - Active Control Loop Runner for Expectation-Grounded Alignment
 
 Monitors and executes the Dual-Verification Gate (Static Check + Dynamic Judge)
-for an EGA harness task graph. Handles delta feedback loops, retries, and evidence logging.
+for an EGA harness task graph. Handles delta feedback loops, retries, and
+optional post-gate HTML report compilation via skills-documentation (compile_docs.py).
 """
 
 import os
@@ -55,6 +56,30 @@ def evaluate_judge_verdict(verdict_path):
         return False, [f"{d.get('criterion_id')}: {d.get('issue')} (Remediation: {d.get('remediation')})" for d in defects]
     except Exception as e:
         return False, [f"Failed to parse judge verdict: {str(e)}"]
+
+def trigger_html_compilation(deliverable_path):
+    """Optionally trigger skills-documentation compile_docs.py if available."""
+    compiler_candidates = [
+        Path("/Users/ksprashanth/code/github/skills-documentation/skills/documentation/scripts/compile_docs.py"),
+        Path.home() / ".gemini" / "skills" / "documentation" / "scripts" / "compile_docs.py"
+    ]
+    
+    compiler = None
+    for cand in compiler_candidates:
+        if cand.exists():
+            compiler = cand
+            break
+
+    if compiler and Path(deliverable_path).exists() and deliverable_path.endswith(".md"):
+        try:
+            res = subprocess.run([sys.executable, str(compiler), "--file", deliverable_path], capture_output=True, text=True)
+            if res.returncode == 0:
+                html_path = deliverable_path.replace(".md", ".html")
+                print(f"[HTML Presentation] Compiled interactive report: {html_path}")
+            else:
+                print(f"[HTML Presentation Warning] compile_docs failed: {res.stderr}")
+        except Exception as e:
+            print(f"[HTML Presentation Warning] Compilation skipped: {str(e)}")
 
 def create_delta_report(node_id, static_errors, judge_errors, attempt, max_retries):
     report = f"""# EGA DUAL-VERIFICATION GATE DELTA REPORT
@@ -106,6 +131,7 @@ def process_node(node, harness_dir):
     if static_pass and judge_pass:
         print(f"[{node_id}] DUAL-GATE VERIFICATION PASSED SUCCESSFULLY!")
         node["status"] = "COMPLETED"
+        trigger_html_compilation(target_artifact)
         return True, None
     else:
         node["retry_count"] += 1

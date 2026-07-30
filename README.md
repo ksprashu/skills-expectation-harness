@@ -1,7 +1,7 @@
 # Expectation-Grounded Alignment (EGA) Harness Engine
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Framework: Antigravity](https://img.shields.io/badge/Framework-Google_Antigravity-orange.svg)](https://antigravity.google)
+[![Framework: Google Antigravity](https://img.shields.io/badge/Framework-Google_Antigravity-orange.svg)](https://antigravity.google)
 
 The **Expectation-Grounded Alignment (EGA)** Harness Engine (invoked via `/ega` or `/harness`) is a production-grade agentic controller skill for Google Antigravity and Gemini. It introduces **Expectation-Aligned Work (EAW)**—a paradigm that synthesizes machine-verifiable contracts (deterministic static verifier scripts + blinded dynamic LLM-as-a-Judge rubrics) **before** work begins, then enforces a dual-verification control loop until all expectation gates pass with zero defects.
 
@@ -10,6 +10,8 @@ The **Expectation-Grounded Alignment (EGA)** Harness Engine (invoked via `/ega` 
 ## 🌟 Key Features
 
 * 🎯 **Pre-Execution Contract Synthesis**: Generates task-specific verifiers (`verify_static.py`) and judge rubrics (`rubric.json`) prior to worker dispatch.
+* 🎭 **6-Persona Role Assignments**: Assigns specialized cognitive persona roles (`Scout-Researcher`, `Analyst-Inquirer`, `Architect-Blueprint`, `Builder-Coder`, `Sentry-Gatekeeper`, `Mentor-Educator`) to task graph nodes without document overhead.
+* 🧠 **Selective Knowledge Grounding**: Hydrates worker subagent context on demand using Google's Open Knowledge Format (OKF) index (`.gemini/knowledge/index.md`) and deterministic OKF verifiers (`verify_okf.py`).
 * 🛡️ **Dual-Verification Gate**: Enforces a strict two-stage quality gate combining fast local script execution with fresh-context, blinded LLM-as-a-Judge evaluations.
 * ⚡ **Non-Coding & Coding Support**: Native verifiers for both software development (syntax, linters, tests) and non-coding domains (research dossiers, strategy documents, architecture specs).
 * 🔄 **Pinpointed Delta Feedback Loops**: Automatically converts static check errors and judge defect lists into concise delta reports (`<node_id>_delta_report.md`) for iterative worker refinement.
@@ -19,9 +21,9 @@ The **Expectation-Grounded Alignment (EGA)** Harness Engine (invoked via `/ega` 
 
 ## 🚀 Quick Start
 
-### 1. Compile Harness for a Goal
+### 1. Compile Harness for a Goal & Persona
 ```bash
-python3 skills/expectation-harness/scripts/compile_ega_harness.py "Design an enterprise security architecture for multi-cloud deployment"
+python3 skills/expectation-harness/scripts/compile_ega_harness.py "Design an enterprise security architecture for multi-cloud deployment" "Architect-Blueprint"
 ```
 
 ### 2. Dispatch Worker Subagent
@@ -54,12 +56,15 @@ skills-expectation-harness/
         ├── SKILL.md                   # Primary custom skill entrypoint
         ├── references/
         │   ├── ega_paradigm.md        # EAW & EGA conceptual foundations
+        │   ├── persona_roles.md       # 6-Persona Role Assignments & Primers
+        │   ├── knowledge_grounding.md # Selective Context Grounding via OKF
         │   ├── static_verifiers.md    # Coding & non-coding deterministic verifiers
         │   ├── dynamic_judges.md      # Blinded LLM-as-a-Judge architecture
         │   └── model_calibration.md   # Context slicing & single-model optimization
         └── scripts/
             ├── compile_ega_harness.py # Harness & contract compiler
-            └── ega_loop_runner.py     # Active control loop & Dual Gate manager
+            ├── ega_loop_runner.py     # Active control loop & Dual Gate manager
+            └── verify_okf.py          # Deterministic OKF Concept Verifier
 ```
 
 ---

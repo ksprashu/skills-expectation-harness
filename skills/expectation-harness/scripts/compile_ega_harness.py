@@ -17,10 +17,10 @@
 compile_ega_harness.py - Expectation-Grounded Alignment (EGA) Compiler
 
 Takes a user goal, generates a Short ID (EGA-<HEX4>), and compiles:
-1. task_graph.json (DAG of micro-chunked atomic nodes)
+1. task_graph.json (DAG of micro-chunked atomic nodes with optional persona_role & grounding_concepts)
 2. verify_static.py (Task-specific deterministic Python verifier script)
 3. rubric.json (Expectation Rubric for Blinded LLM-as-a-Judge)
-4. tasks/task_XX_spec.md (Isolated worker directives)
+4. tasks/task_XX_spec.md (Isolated worker directives with persona role priming)
 """
 
 import os
@@ -44,7 +44,10 @@ def init_harness_workspace(short_id, base_dir=None):
 
     return harness_dir, tasks_dir
 
-def create_default_task_graph(short_id, goal_summary, domain="general"):
+def create_default_task_graph(short_id, goal_summary, domain="general", persona_role="Builder-Coder", grounding_concepts=None):
+    if grounding_concepts is None:
+        grounding_concepts = []
+
     return {
         "short_id": short_id,
         "goal_summary": goal_summary,
@@ -53,6 +56,8 @@ def create_default_task_graph(short_id, goal_summary, domain="general"):
             {
                 "id": "node_01",
                 "name": "Initial Implementation Pass",
+                "persona_role": persona_role,
+                "grounding_concepts": grounding_concepts,
                 "spec_file": f".gemini/harness/{short_id}/tasks/task_01_spec.md",
                 "target_artifact": f".gemini/harness/{short_id}/deliverable.md",
                 "static_verifier": f".gemini/harness/{short_id}/verify_static.py",
@@ -66,6 +71,20 @@ def create_default_task_graph(short_id, goal_summary, domain="general"):
 
 def create_default_static_verifier(target_artifact):
     return f"""#!/usr/bin/env python3
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import sys
 import json
 import re
@@ -130,11 +149,13 @@ def create_default_rubric(short_id):
 
 def main():
     goal = sys.argv[1] if len(sys.argv) > 1 else "Build Expectation-Grounded Deliverable"
+    persona_role = sys.argv[2] if len(sys.argv) > 2 else "Builder-Coder"
+    
     short_id = generate_short_id()
     harness_dir, tasks_dir = init_harness_workspace(short_id)
 
     # 1. Save Task Graph
-    graph = create_default_task_graph(short_id, goal)
+    graph = create_default_task_graph(short_id, goal, persona_role=persona_role)
     with open(harness_dir / "task_graph.json", "w", encoding="utf-8") as f:
         json.dump(graph, f, indent=2)
 
@@ -157,6 +178,9 @@ def main():
 ## GOAL:
 {goal}
 
+## PERSONA ROLE PRIMING:
+Role: `{persona_role}`
+
 ## TARGET ARTIFACT:
 `{target_artifact}`
 
@@ -165,7 +189,8 @@ def main():
 2. Dynamic Rubric: `{harness_dir / 'rubric.json'}`
 
 ## INSTRUCTIONS:
-Execute the implementation to satisfy the goal. Save your complete deliverable to `{target_artifact}`.
+Operate under the cognitive mandate of `{persona_role}`.
+Execute the implementation to satisfy the goal and save your complete deliverable to `{target_artifact}`.
 Ensure no placeholders ('TBD', 'TODO') are left in the artifact.
 """
     with open(tasks_dir / "task_01_spec.md", "w", encoding="utf-8") as f:

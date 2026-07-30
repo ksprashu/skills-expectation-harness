@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Gemini / Antigravity Local Harness Execution Directories
+.gemini/harness/
+.gemini-tmp/
+*.log
